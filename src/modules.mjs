@@ -41,7 +41,7 @@ const systemLibdir = path.join(srcDir, 'lib');
 
 // Suffix, return type and trailing parameters of each async variant of an
 // `__async: 'auto'` function (see expandAsyncVariants).
-const ASYNC_VARIANTS = [['promise', 'p', ''], ['callback', 'v', 'pp']];
+const ASYNC_VARIANTS = [['promise', 'p', ''], ['callback', 'v', 'pp'], ['fd', 'i', '']];
 
 function isBeneath(childPath, parentPath) {
   const relativePath = path.relative(parentPath, childPath);
@@ -300,10 +300,11 @@ export const LibraryManager = {
    * pointer-sized value or a Promise of one, unless its trailing `sync`
    * argument forbids (see jsifier). Each also has a `foo_promise` variant, the
    * same body returning an em_promise_t of the result on the calling thread,
-   * and a `foo_callback` variant, taking `callback(err, result, arg)` and
-   * `arg` to call on the calling thread with it (see $callbackFromPromise);
-   * both can always wait. Variants are emitted only where used; an explicit
-   * library entry of the same name takes precedence.
+   * a `foo_callback` variant, taking `callback(err, result, arg)` and `arg`
+   * to call on the calling thread with it (see $callbackFromPromise), and a
+   * `foo_fd` variant, returning an fd readable once the result is available
+   * (see $fdFromPromise); all can always wait. Variants are emitted only
+   * where used; an explicit library entry of the same name takes precedence.
    */
   expandAsyncVariants() {
     const bases = [];
@@ -327,7 +328,7 @@ export const LibraryManager = {
           }
         }
         if (PTHREADS && this.library[base + '__proxy'] == 'sync') {
-          const proxyFunc = variant == 'promise' ? '$proxyToMainThreadPromise' : '$proxyToMainThreadCallback';
+          const proxyFunc = {promise: '$proxyToMainThreadPromise', callback: '$proxyToMainThreadCallback', fd: '$proxyToMainThreadFd'}[variant];
           this.library[name + '__deps'] = [...(this.library[name + '__deps'] ?? []), proxyFunc];
         }
       }

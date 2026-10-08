@@ -229,12 +229,12 @@ Async auto call variants
 ########################
 
 All ``__async: 'auto'`` defined library functions support a calling convention
-for being called with a ``_promise`` or ``_callback`` suffix to obtain the
-result as a promise or through a callback directly without suspending, which
-can be called from any stack.
+for being called with a ``_promise``, ``_callback`` or ``_fd`` suffix to obtain
+the result as a promise, through a callback or as a file descriptor directly
+without suspending, which can be called from any stack.
 
 The same ``lookup`` definition from the example in the previous section above
-defines all three C variants:
+defines all four C variants:
 
 .. code-block:: c
 
@@ -243,6 +243,7 @@ defines all three C variants:
    void lookup_callback(const char* name,
                         void (*callback)(bool err, void* result, void* arg),
                         void* arg);
+   int lookup_fd(const char* name);
 
 Calling ``lookup_promise()`` runs the same body (with ``sync`` always
 ``false``) and returns a promise handle (``em_promise_t``, see
@@ -254,6 +255,12 @@ Calling ``lookup_callback()`` likewise runs the body and calls
 available, with ``err`` set (and ``result`` ``NULL``) if the promise was
 rejected, in either case after the call has returned.  A pending callback keeps
 the runtime alive, like a timer.
+
+Calling ``lookup_fd()`` likewise returns a file descriptor that becomes readable
+(``poll()``, ``select()``, ``epoll``) once the result is available, with
+``POLLERR`` if the promise was rejected.  ``read()`` of ``sizeof(intptr_t)``
+bytes takes the value (``EIO`` if rejected); the fd is then at EOF, and must be
+``close()``\d.  This variant is not currently available under ``WASMFS``.
 
 These variants are only generated when explicitly used.
 
