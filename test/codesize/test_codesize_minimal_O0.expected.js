@@ -848,6 +848,7 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'runtimeKeepalivePush',
   'runtimeKeepalivePop',
   'callUserCallback',
+  'callbackFromPromise',
   'maybeExit',
   'asyncLoad',
   'asmjsMangle',
